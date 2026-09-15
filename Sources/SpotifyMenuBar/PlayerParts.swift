@@ -76,16 +76,20 @@ struct TransportControls: View {
     var tint: Color = .primary
     var scale: CGFloat = 1
     var spacing: CGFloat = 20
+    /// 주어진 폭 양끝에 붙이고 가운데 버튼을 한가운데 둔다.
+    var justified: Bool = false
 
     var body: some View {
-        HStack(spacing: spacing) {
+        HStack(spacing: justified ? 0 : spacing) {
             TransportButton(symbol: "backward.fill", size: 15 * scale, tint: tint, action: model.previousTrack)
+            if justified { Spacer(minLength: 8) }
             TransportButton(
                 symbol: isPlaying ? "pause.fill" : "play.fill",
                 size: 21 * scale,
                 tint: tint,
                 action: model.playPause
             )
+            if justified { Spacer(minLength: 8) }
             TransportButton(symbol: "forward.fill", size: 15 * scale, tint: tint, action: model.nextTrack)
         }
     }

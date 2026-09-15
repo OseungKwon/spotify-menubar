@@ -98,10 +98,10 @@ struct CoverBleedView: View {
                 )
             }
 
-            TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, spacing: 6)
-                // 버튼은 누를 자리를 넓히려고 글리프보다 프레임이 크다. 그대로 두면
-                // 첫 버튼이 제목보다 안쪽으로 들어가 보여서 그만큼 당긴다.
-                .offset(x: -Self.glyphInset)
+            TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, justified: true)
+                // 버튼은 누를 자리를 넓히려고 글리프보다 프레임이 크다. 좌우로
+                // 그만큼 넓혀야 글리프가 글자와 같은 선에서 시작하고 끝난다.
+                .padding(.horizontal, -Self.glyphInset)
         }
     }
 }
