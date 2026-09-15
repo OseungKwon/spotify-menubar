@@ -37,6 +37,8 @@ struct StripView: View {
                 onScrub: model.scrub(to:),
                 onCommit: model.commitScrub(to:)
             )
+            // 팝오버 모서리 라운드에 선 끝이 잘려 보여서 안쪽으로 들인다.
+            .padding(.horizontal, 10)
         }
     }
 }
