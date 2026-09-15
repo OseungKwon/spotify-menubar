@@ -2,7 +2,7 @@
 
 macOS 메뉴바에서 현재 Spotify에서 재생 중인 곡 정보를 실시간으로 확인하고 제어할 수 있는 미니 플레이어 앱입니다.
 
-![재생 화면](docs/images/player.png)
+<img src="docs/images/player.png" width="400" alt="재생 화면">
 
 ## 개요
 
@@ -73,7 +73,7 @@ make install
 
 곡 정보를 정상적으로 읽어오기 위해 **허용**을 선택해야 합니다. 실수로 거부한 경우 메뉴바에 `권한 필요` 안내가 표시되며, 해당 문구를 클릭하여 macOS 시스템 설정에서 권한을 다시 부여할 수 있습니다.
 
-![권한 필요 상태](docs/images/player-permission.png)
+<img src="docs/images/player-permission.png" width="320" alt="권한 필요 상태">
 
 ## 제약 및 참고 사항
 
