@@ -19,7 +19,7 @@ enum PopoverStyle: String, CaseIterable {
 
     var size: CGSize {
         switch self {
-        case .coverBleed: return CGSize(width: 372, height: 136)
+        case .coverBleed: return CGSize(width: 320, height: 136)
         case .poster: return CGSize(width: 320, height: 300)
         case .strip: return CGSize(width: 380, height: 86)
         }

@@ -61,22 +61,18 @@ struct CoverBleedView: View {
     /// 제목과 조작부가 팝오버 위아래 끝으로 갈라져 멀어 보인다.
     private var info: some View {
         VStack(alignment: .leading, spacing: Self.blockGap) {
-            HStack(alignment: .top, spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    LinkedTitle(
-                        text: track.name,
-                        font: .systemFont(ofSize: 15, weight: .semibold),
-                        color: .white,
-                        action: model.openTrackInSpotify
-                    )
-                    MarqueeText(
-                        text: track.subtitle,
-                        font: .systemFont(ofSize: 12),
-                        color: .white.opacity(0.72)
-                    )
-                }
-                EqualizerBars(isPlaying: track.isPlaying)
-                    .foregroundStyle(.white.opacity(0.55))
+            VStack(alignment: .leading, spacing: 2) {
+                LinkedTitle(
+                    text: track.name,
+                    font: .systemFont(ofSize: 15, weight: .semibold),
+                    color: .white,
+                    action: model.openTrackInSpotify
+                )
+                MarqueeText(
+                    text: track.subtitle,
+                    font: .systemFont(ofSize: 12),
+                    color: .white.opacity(0.72)
+                )
             }
 
             TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, spacing: 6)
