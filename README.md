@@ -2,8 +2,7 @@
 
 맥 메뉴바에서 지금 나오는 Spotify 곡을 보여주는 앱입니다.
 
-<!-- docs/images/hero.png : 메뉴바에 곡이 떠 있고 그 아래 재생 화면이 열린 모습 -->
-![](docs/images/hero.png)
+![재생 화면](docs/images/player.png)
 
 - 메뉴바에 `노래 - 가수`가 뜹니다
 - 누르면 앨범 커버와 재생 버튼이 나옵니다
@@ -39,10 +38,9 @@ make install
 
 ## 쓰는 법
 
-<!-- docs/images/player.png : 재생 화면 (원형 커버 + 진행 링 + 제목/아티스트 + 재생 버튼) -->
-![](docs/images/player.png)
-
 **메뉴바 글자를 클릭**하면 재생 화면이 열립니다.
+
+![링에 마우스를 올린 모습](docs/images/player-hover.png)
 
 - 커버 테두리의 링이 진행 상태를 나타냅니다. **링을 끌면** 그 지점으로 이동합니다
 - 링에 마우스를 올리면 지금 위치와 곡 길이가 뜹니다
