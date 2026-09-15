@@ -128,6 +128,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         permissionItem.target = self
         menu.addItem(permissionItem)
 
+        let openTrackItem = NSMenuItem(
+            title: "이 곡 Spotify에서 열기", action: #selector(openTrack), keyEquivalent: ""
+        )
+        openTrackItem.target = self
+        menu.addItem(openTrackItem)
+
         let openItem = NSMenuItem(title: "Spotify 열기", action: #selector(openSpotify), keyEquivalent: "")
         openItem.target = self
         menu.addItem(openItem)
@@ -186,6 +192,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     @objc private func openSpotify() { model.openSpotify() }
+
+    @objc private func openTrack() { model.openTrackInSpotify() }
 
     @objc private func selectStyle(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String,

@@ -237,3 +237,127 @@ private func seconds(at x: CGFloat, width: CGFloat, duration: Double) -> Double 
     guard width > 0 else { return 0 }
     return min(max(Double(x / width), 0), 1) * duration
 }
+
+// MARK: - 원형 커버
+
+/// 원으로 자른 커버와 그 둘레를 도는 진행 링.
+///
+/// 진행 바를 따로 두지 않고 커버 테두리가 그 역할을 한다. 링 위에서 끌면
+/// 그 각도로 이동한다. 커버 안쪽에서 시작한 드래그는 무시해서, 위치를
+/// 확인하려고 커버를 눌렀다가 곡이 튀는 일이 없게 한다.
+struct RingArtwork: View {
+    let image: NSImage?
+    let diameter: CGFloat
+    let position: Double
+    let duration: Double
+    let tint: Color
+    var trackTint: Color = .white.opacity(0.28)
+    let onScrub: (Double) -> Void
+    let onCommit: (Double) -> Void
+
+    /// 커버와 링 사이 간격.
+    private let gap: CGFloat = 5
+
+    @State private var hovering = false
+    @State private var dragging = false
+    /// 12시를 넘나들 때 진행이 반대편으로 튀지 않도록 직전 값을 들고 있는다.
+    @State private var lastFraction: Double = 0
+
+    private var ringWidth: CGFloat { hovering || dragging ? 5 : 3 }
+    private var ringDiameter: CGFloat { diameter - ringWidth }
+    private var coverDiameter: CGFloat { diameter - 2 * (ringWidth + gap) }
+    private var progress: Double {
+        guard duration > 0 else { return 0 }
+        return min(max(position / duration, 0), 1)
+    }
+
+    var body: some View {
+        ZStack {
+            cover
+            Circle()
+                .stroke(trackTint, lineWidth: ringWidth)
+                .frame(width: ringDiameter, height: ringDiameter)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(tint, style: StrokeStyle(lineWidth: ringWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .frame(width: ringDiameter, height: ringDiameter)
+            knob
+        }
+        .frame(width: diameter, height: diameter)
+        .contentShape(Circle())
+        .gesture(scrub)
+        .animation(.easeOut(duration: 0.18), value: ringWidth)
+        .smoothHover { hovering = $0 }
+    }
+
+    private var cover: some View {
+        Group {
+            if let image {
+                Image(nsImage: image).resizable().scaledToFill()
+            } else {
+                Color.white.opacity(0.12).overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: coverDiameter * 0.26))
+                        .foregroundStyle(.white.opacity(0.6))
+                )
+            }
+        }
+        .frame(width: coverDiameter, height: coverDiameter)
+        .clipShape(Circle())
+        .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+    }
+
+    /// 끌고 있는 동안에만 보이는 손잡이. 어디를 잡고 있는지 알려 준다.
+    private var knob: some View {
+        ZStack {
+            Circle()
+                .fill(.white)
+                .frame(width: ringWidth + 4, height: ringWidth + 4)
+                .offset(y: -ringDiameter / 2)
+        }
+        .frame(width: diameter, height: diameter)
+        .rotationEffect(.degrees(360 * progress))
+        .opacity(hovering || dragging ? 1 : 0)
+    }
+
+    private var scrub: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                if !dragging {
+                    guard isOnRing(value.startLocation) else { return }
+                    dragging = true
+                    lastFraction = progress
+                }
+                onScrub(seek(to: value.location))
+            }
+            .onEnded { value in
+                guard dragging else { return }
+                dragging = false
+                onCommit(seek(to: value.location))
+            }
+    }
+
+    private func isOnRing(_ point: CGPoint) -> Bool {
+        let center = CGPoint(x: diameter / 2, y: diameter / 2)
+        let distance = hypot(point.x - center.x, point.y - center.y)
+        return distance >= coverDiameter / 2
+    }
+
+    private func seek(to point: CGPoint) -> Double {
+        let center = diameter / 2
+        var angle = atan2(point.x - center, center - point.y)
+        if angle < 0 { angle += 2 * .pi }
+        var next = angle / (2 * .pi)
+
+        // 한 번에 반 바퀴 넘게 움직였다면 12시를 넘어간 것이다. 반대편으로
+        // 튀는 대신 끝에 붙인다.
+        if next - lastFraction > 0.5 {
+            next = 0
+        } else if lastFraction - next > 0.5 {
+            next = 1
+        }
+        lastFraction = next
+        return next * duration
+    }
+}
