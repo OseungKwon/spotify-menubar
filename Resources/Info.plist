@@ -2,18 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key>
-	<string>SpotifyMenuBar</string>
 	<key>CFBundleDisplayName</key>
 	<string>Spotify MenuBar</string>
+	<key>CFBundleExecutable</key>
+	<string>SpotifyMenuBar</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.oseungkwon.spotifymenubar</string>
-	<key>CFBundleExecutable</key>
+	<key>CFBundleName</key>
 	<string>SpotifyMenuBar</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.0.1</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>

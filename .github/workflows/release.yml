@@ -11,7 +11,7 @@ jobs:
   dmg:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # 태그가 버전의 기준이다. 번들에 같은 값을 박아 둔다.
       - name: 버전 박기
