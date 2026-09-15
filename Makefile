@@ -1,4 +1,4 @@
-.PHONY: build run install clean
+.PHONY: build run install dmg clean
 
 build:
 	@scripts/build.sh
@@ -8,6 +8,9 @@ run: build
 
 install: build
 	@scripts/install.sh
+
+dmg:
+	@scripts/dmg.sh
 
 clean:
 	@rm -rf .build build
