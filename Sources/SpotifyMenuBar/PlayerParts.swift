@@ -9,11 +9,52 @@ import SwiftUI
 /// 눌렀다는 느낌이 남지 않는다.
 struct PressableStyle: ButtonStyle {
     var pressedScale: CGFloat = 0.88
+    /// 글자처럼 줄이면 어색한 대상은 밝기로만 반응시킨다.
+    var pressedOpacity: Double = 1
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? pressedScale : 1)
+            .opacity(configuration.isPressed ? pressedOpacity : 1)
             .animation(.spring(response: 0.22, dampingFraction: 0.55), value: configuration.isPressed)
+    }
+}
+
+/// 누르면 그 곡을 Spotify에서 여는 제목. 마우스를 올리면 손가락 커서로 바뀐다.
+struct LinkedTitle: View {
+    let text: String
+    let font: NSFont
+    var color: Color = .primary
+    let action: () -> Void
+
+    @State private var hovering = false
+    @State private var pushedCursor = false
+
+    var body: some View {
+        Button(action: action) {
+            MarqueeText(text: text, font: font, color: color)
+                .opacity(hovering ? 0.8 : 1)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle(pressedScale: 1, pressedOpacity: 0.55))
+        .help("Spotify에서 열기")
+        .onHover { inside in
+            withAnimation(.easeOut(duration: 0.18)) { hovering = inside }
+            setCursor(inside)
+        }
+        // 팝오버가 닫히면 onHover가 오지 않는다. 커서를 되돌려 놓지 않으면
+        // 바깥에서도 손가락 모양이 남는다.
+        .onDisappear { setCursor(false) }
+    }
+
+    private func setCursor(_ inside: Bool) {
+        if inside, !pushedCursor {
+            NSCursor.pointingHand.push()
+            pushedCursor = true
+        } else if !inside, pushedCursor {
+            NSCursor.pop()
+            pushedCursor = false
+        }
     }
 }
 
@@ -256,16 +297,20 @@ struct RingArtwork: View {
     let onCommit: (Double) -> Void
 
     /// 커버와 링 사이 간격.
-    private let gap: CGFloat = 5
+    private let gap: CGFloat = 4
+    private let baseRingWidth: CGFloat = 3
+    private let hoverRingWidth: CGFloat = 5
 
     @State private var hovering = false
     @State private var dragging = false
     /// 12시를 넘나들 때 진행이 반대편으로 튀지 않도록 직전 값을 들고 있는다.
     @State private var lastFraction: Double = 0
 
-    private var ringWidth: CGFloat { hovering || dragging ? 5 : 3 }
-    private var ringDiameter: CGFloat { diameter - ringWidth }
-    private var coverDiameter: CGFloat { diameter - 2 * (ringWidth + gap) }
+    private var ringWidth: CGFloat { hovering || dragging ? hoverRingWidth : baseRingWidth }
+    /// 스트로크의 중심선. 링은 이 선을 기준으로 안팎으로 같이 굵어진다.
+    private var ringDiameter: CGFloat { diameter - hoverRingWidth }
+    /// 가장 두꺼워진 링을 기준으로 잡아 두면 호버할 때 커버가 줄어들지 않는다.
+    private var coverDiameter: CGFloat { ringDiameter - hoverRingWidth - 2 * gap }
     private var progress: Double {
         guard duration > 0 else { return 0 }
         return min(max(position / duration, 0), 1)

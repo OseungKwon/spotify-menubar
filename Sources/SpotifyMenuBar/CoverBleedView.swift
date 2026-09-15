@@ -63,10 +63,11 @@ struct CoverBleedView: View {
         VStack(alignment: .leading, spacing: Self.blockGap) {
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
-                    MarqueeText(
+                    LinkedTitle(
                         text: track.name,
                         font: .systemFont(ofSize: 15, weight: .semibold),
-                        color: .white
+                        color: .white,
+                        action: model.openTrackInSpotify
                     )
                     MarqueeText(
                         text: track.subtitle,
