@@ -93,7 +93,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         popover.animates = true
         popover.delegate = self
         popover.contentSize = NowPlayingView.size
-        popover.contentViewController = NSHostingController(rootView: NowPlayingView(model: model))
     }
 
     private func togglePopover() {
@@ -103,6 +102,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         }
         guard let button = item.button else { return }
         model.spotify.refresh()
+        // 열 때마다 새로 만든다. 이유는 popoverDidClose에 적어 뒀다.
+        popover.contentViewController = NSHostingController(rootView: NowPlayingView(model: model))
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         // accessory 앱이라 활성화해 주지 않으면 팝오버 안의 버튼이 첫 클릭을 놓친다.
         NSApp.activate(ignoringOtherApps: true)
@@ -111,6 +112,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     func popoverDidClose(_ notification: Notification) {
         model.stopTicking()
+        // 마키와 재생 막대의 repeatForever 애니메이션은 팝오버가 닫혀도 계속 돈다.
+        // 화면에 보이지도 않는 애니메이션이 CPU를 15%씩 먹어서, 뷰째로 버린다.
+        popover.contentViewController = nil
     }
 
     // MARK: - 설정 메뉴
