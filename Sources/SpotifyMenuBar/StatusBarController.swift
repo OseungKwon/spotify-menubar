@@ -54,30 +54,30 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     private func render(state: SpotifyState) {
-        guard let button = item.button else { return }
-
         switch state {
         case .track(let track):
             let label = track.artist.isEmpty ? track.name : "\(track.name) - \(track.artist)"
-            button.title = Self.truncate(label, to: maxTitleLength)
-            button.image = symbol(track.isPlaying ? "music.note" : "pause.fill")
+            // 아이콘이 없으니 재생 중인지 여부는 글자 밝기로만 드러난다.
+            setTitle(Self.truncate(label, to: maxTitleLength), dimmed: !track.isPlaying)
 
         case .idle, .notRunning:
-            button.title = ""
-            button.image = symbol("music.note")
+            // 제목을 비우면 누를 자리가 사라진다. 앱 이름만 흐리게 남긴다.
+            setTitle("Spotify", dimmed: true)
 
         case .needsPermission:
-            button.title = "권한 필요"
-            button.image = symbol("exclamationmark.triangle")
+            setTitle("권한 필요", dimmed: false)
         }
 
         permissionItem.isHidden = state != .needsPermission
     }
 
-    private func symbol(_ name: String) -> NSImage? {
-        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
-        image?.isTemplate = true
-        return image
+    private func setTitle(_ text: String, dimmed: Bool) {
+        guard let button = item.button else { return }
+        button.image = nil
+        button.attributedTitle = NSAttributedString(
+            string: text,
+            attributes: [.foregroundColor: dimmed ? NSColor.secondaryLabelColor : NSColor.labelColor]
+        )
     }
 
     /// 뒤쪽을 잘라내고 말줄임표를 붙인다. 곡 제목이 앞에 오므로 앞부분을 지킨다.
