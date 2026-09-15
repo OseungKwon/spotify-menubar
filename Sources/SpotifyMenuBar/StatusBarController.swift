@@ -1,16 +1,22 @@
 import AppKit
+import Combine
 import ServiceManagement
+import SwiftUI
 
-/// 메뉴바 아이템의 제목과 메뉴를 관리한다.
-final class StatusBarController {
+/// 메뉴바 아이템을 관리한다. 왼쪽 클릭은 재생 화면, 오른쪽 클릭은 설정 메뉴.
+final class StatusBarController: NSObject, NSPopoverDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    private let spotify: SpotifyController
-    private let titleItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private let playPauseItem = NSMenuItem(title: "재생", action: #selector(playPause), keyEquivalent: "")
+    private let model: PlayerModel
+    private let popover = NSPopover()
+    private let menu = NSMenu()
     private let lengthMenu = NSMenu()
     private let launchAtLoginItem = NSMenuItem(
         title: "로그인 시 자동 실행", action: #selector(toggleLaunchAtLogin), keyEquivalent: ""
     )
+    private lazy var permissionItem = NSMenuItem(
+        title: "자동화 권한 열기…", action: #selector(openAutomationSettings), keyEquivalent: ""
+    )
+    private var cancellables = Set<AnyCancellable>()
 
     /// 메뉴바를 독점하지 않도록 제목을 이 길이에서 자른다.
     private var maxTitleLength: Int {
@@ -22,14 +28,30 @@ final class StatusBarController {
     }
     private static let lengthOptions = [20, 30, 40, 60]
 
-    init(spotify: SpotifyController) {
-        self.spotify = spotify
+    init(model: PlayerModel) {
+        self.model = model
+        super.init()
+
+        buildPopover()
         buildMenu()
-        render(state: spotify.state)
-        spotify.onChange = { [weak self] state in self?.render(state: state) }
+        buildStatusItem()
+        render(state: model.state)
+
+        model.$state
+            .receive(on: RunLoop.main)
+            .sink { [weak self] state in self?.render(state: state) }
+            .store(in: &cancellables)
     }
 
-    // MARK: - 렌더링
+    // MARK: - 메뉴바 아이템
+
+    private func buildStatusItem() {
+        guard let button = item.button else { return }
+        button.target = self
+        button.action = #selector(handleClick)
+        // 오른쪽 버튼까지 받아야 설정 메뉴를 띄울 수 있다.
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+    }
 
     private func render(state: SpotifyState) {
         guard let button = item.button else { return }
@@ -39,31 +61,14 @@ final class StatusBarController {
             let label = track.artist.isEmpty ? track.name : "\(track.name) - \(track.artist)"
             button.title = Self.truncate(label, to: maxTitleLength)
             button.image = symbol(track.isPlaying ? "music.note" : "pause.fill")
-            titleItem.title = label
-            titleItem.isHidden = false
-            playPauseItem.title = track.isPlaying ? "일시정지" : "재생"
-            playPauseItem.isEnabled = true
 
-        case .idle:
+        case .idle, .notRunning:
             button.title = ""
             button.image = symbol("music.note")
-            titleItem.isHidden = true
-            playPauseItem.title = "재생"
-            playPauseItem.isEnabled = true
-
-        case .notRunning:
-            button.title = ""
-            button.image = symbol("music.note")
-            titleItem.isHidden = true
-            playPauseItem.title = "재생"
-            playPauseItem.isEnabled = false
 
         case .needsPermission:
             button.title = "권한 필요"
             button.image = symbol("exclamationmark.triangle")
-            titleItem.title = "Spotify 제어 권한이 필요합니다"
-            titleItem.isHidden = false
-            playPauseItem.isEnabled = false
         }
 
         permissionItem.isHidden = state != .needsPermission
@@ -81,37 +86,47 @@ final class StatusBarController {
         return text.prefix(max(limit - 1, 1)).trimmingCharacters(in: .whitespaces) + "…"
     }
 
-    // MARK: - 메뉴
+    // MARK: - 팝오버
 
-    private lazy var permissionItem = NSMenuItem(
-        title: "자동화 권한 열기…", action: #selector(openAutomationSettings), keyEquivalent: ""
-    )
+    private func buildPopover() {
+        popover.behavior = .transient
+        popover.animates = true
+        popover.delegate = self
+        popover.contentSize = NowPlayingView.size
+        popover.contentViewController = NSHostingController(rootView: NowPlayingView(model: model))
+    }
+
+    private func togglePopover() {
+        if popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+        guard let button = item.button else { return }
+        model.spotify.refresh()
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        // accessory 앱이라 활성화해 주지 않으면 팝오버 안의 버튼이 첫 클릭을 놓친다.
+        NSApp.activate(ignoringOtherApps: true)
+        model.startTicking()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        model.stopTicking()
+    }
+
+    // MARK: - 설정 메뉴
 
     private func buildMenu() {
-        let menu = NSMenu()
         menu.autoenablesItems = false
-
-        titleItem.isEnabled = false
-        menu.addItem(titleItem)
 
         permissionItem.target = self
         menu.addItem(permissionItem)
-        menu.addItem(.separator())
-
-        playPauseItem.target = self
-        menu.addItem(playPauseItem)
-        for (title, action) in [("이전 곡", #selector(previousTrack)), ("다음 곡", #selector(nextTrack))] {
-            let entry = NSMenuItem(title: title, action: action, keyEquivalent: "")
-            entry.target = self
-            menu.addItem(entry)
-        }
-        menu.addItem(.separator())
 
         let openItem = NSMenuItem(title: "Spotify 열기", action: #selector(openSpotify), keyEquivalent: "")
         openItem.target = self
         menu.addItem(openItem)
+        menu.addItem(.separator())
 
-        let lengthItem = NSMenuItem(title: "표시 길이", action: nil, keyEquivalent: "")
+        let lengthItem = NSMenuItem(title: "메뉴바 표시 길이", action: nil, keyEquivalent: "")
         for option in Self.lengthOptions {
             let entry = NSMenuItem(title: "\(option)자", action: #selector(selectLength(_:)), keyEquivalent: "")
             entry.target = self
@@ -127,31 +142,34 @@ final class StatusBarController {
 
         let quitItem = NSMenuItem(title: "종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quitItem)
-
-        menu.delegate = menuDelegate
-        item.menu = menu
     }
 
-    /// 메뉴를 열 때마다 최신 상태와 체크 표시를 맞춘다.
-    private lazy var menuDelegate = MenuDelegate { [weak self] in
-        guard let self else { return }
-        self.spotify.refresh()
-        for entry in self.lengthMenu.items {
-            entry.state = entry.tag == self.maxTitleLength ? .on : .off
+    private func showMenu() {
+        guard let button = item.button else { return }
+        for entry in lengthMenu.items {
+            entry.state = entry.tag == maxTitleLength ? .on : .off
         }
-        self.launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 5), in: button)
     }
 
     // MARK: - 액션
 
-    @objc private func playPause() { spotify.playPause() }
-    @objc private func nextTrack() { spotify.nextTrack() }
-    @objc private func previousTrack() { spotify.previousTrack() }
-    @objc private func openSpotify() { spotify.activateSpotify() }
+    @objc private func handleClick() {
+        let event = NSApp.currentEvent
+        let isSecondary = event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true
+        if isSecondary {
+            showMenu()
+        } else {
+            togglePopover()
+        }
+    }
+
+    @objc private func openSpotify() { model.openSpotify() }
 
     @objc private func selectLength(_ sender: NSMenuItem) {
         maxTitleLength = sender.tag
-        render(state: spotify.state)
+        render(state: model.state)
     }
 
     @objc private func toggleLaunchAtLogin() {
@@ -174,11 +192,4 @@ final class StatusBarController {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
         NSWorkspace.shared.open(url)
     }
-}
-
-/// 메뉴가 열리는 순간을 알려주는 얇은 델리게이트.
-private final class MenuDelegate: NSObject, NSMenuDelegate {
-    private let willOpen: () -> Void
-    init(willOpen: @escaping () -> Void) { self.willOpen = willOpen }
-    func menuWillOpen(_ menu: NSMenu) { willOpen() }
 }

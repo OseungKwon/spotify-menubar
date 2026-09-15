@@ -2,10 +2,11 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let spotify = SpotifyController()
+    private lazy var model = PlayerModel(spotify: spotify)
     private var statusBar: StatusBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusBar = StatusBarController(spotify: spotify)
+        statusBar = StatusBarController(model: model)
         spotify.start()
     }
 }
