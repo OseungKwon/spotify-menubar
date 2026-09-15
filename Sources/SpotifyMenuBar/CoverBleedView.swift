@@ -23,7 +23,7 @@ struct CoverBleedView: View {
 
     /// 글자 칸의 폭. 아래는 조작부 한 줄이 딱 들어가는 값이고, 위는 더 늘려도
     /// 읽기 좋아지지 않는 선에서 끊는다.
-    private static let infoRange: ClosedRange<CGFloat> = 114...210
+    private static let infoRange: ClosedRange<CGFloat> = 114...172
 
     /// 곡 제목에 맞춰 폭을 정한다. 고정 폭으로 두면 짧은 제목에서 오른쪽이
     /// 휑해져 좌우 여백이 달라 보인다.
