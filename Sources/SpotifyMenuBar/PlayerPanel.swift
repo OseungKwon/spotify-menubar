@@ -28,6 +28,10 @@ final class PlayerPanel: NSPanel {
     /// 클릭했을 때 닫을 시점을 알 수 있다.
     override var canBecomeKey: Bool { true }
 
+    /// 메뉴바와 창 사이 간격. 제어 센터를 비롯한 시스템 패널이 메뉴바에
+    /// 붙지 않고 이만큼 떨어져 뜬다.
+    private static let menuBarGap: CGFloat = 8
+
     /// 메뉴바 아이템 바로 아래, 버튼 가운데에 맞춰 세운다.
     func position(below button: NSStatusBarButton) {
         guard let buttonWindow = button.window else { return }
@@ -35,7 +39,7 @@ final class PlayerPanel: NSPanel {
 
         var origin = NSPoint(
             x: onScreen.midX - frame.width / 2,
-            y: onScreen.minY - frame.height - 4
+            y: onScreen.minY - frame.height - Self.menuBarGap
         )
         // 메뉴바 끝에 있는 아이템이면 화면 밖으로 나간다.
         if let visible = (buttonWindow.screen ?? NSScreen.main)?.visibleFrame {
