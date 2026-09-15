@@ -316,9 +316,13 @@ struct RingArtwork: View {
         return min(max(position / duration, 0), 1)
     }
 
+    /// 진행은 링이 보여 준다. 숫자는 실제로 탐색할 때만 필요하다.
+    private var showsTime: Bool { hovering || dragging }
+
     var body: some View {
         ZStack {
             cover
+            readout
             Circle()
                 .stroke(trackTint, lineWidth: ringWidth)
                 .frame(width: ringDiameter, height: ringDiameter)
@@ -351,6 +355,24 @@ struct RingArtwork: View {
         .frame(width: coverDiameter, height: coverDiameter)
         .clipShape(Circle())
         .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+    }
+
+    /// 만지는 동안 커버를 덮고 뜨는 시간. 위가 지금 위치, 아래가 곡 길이다.
+    private var readout: some View {
+        ZStack {
+            Circle().fill(.black.opacity(0.45))
+            VStack(spacing: 0) {
+                Text(TimeLabels.clock(position))
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                Text(TimeLabels.clock(duration))
+                    .font(.system(size: 10).monospacedDigit())
+                    .opacity(0.7)
+            }
+            .foregroundStyle(.white)
+        }
+        .frame(width: coverDiameter, height: coverDiameter)
+        .opacity(showsTime ? 1 : 0)
+        .animation(.easeOut(duration: 0.18), value: showsTime)
     }
 
     /// 끌고 있는 동안에만 보이는 손잡이. 어디를 잡고 있는지 알려 준다.

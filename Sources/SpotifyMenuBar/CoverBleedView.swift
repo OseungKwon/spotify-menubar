@@ -79,19 +79,10 @@ struct CoverBleedView: View {
                     .foregroundStyle(.white.opacity(0.55))
             }
 
-            HStack(spacing: 0) {
-                TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, spacing: 6)
-                    // 버튼은 누를 자리를 넓히려고 글리프보다 프레임이 크다. 그대로 두면
-                    // 첫 버튼이 제목보다 안쪽으로 들어가 보여서 그만큼 당긴다.
-                    .offset(x: -Self.glyphInset)
-                Spacer(minLength: 8)
-                TimeLabels(
-                    position: model.position,
-                    duration: track.duration,
-                    tint: .white.opacity(0.65)
-                )
-                .fixedSize()
-            }
+            TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, spacing: 6)
+                // 버튼은 누를 자리를 넓히려고 글리프보다 프레임이 크다. 그대로 두면
+                // 첫 버튼이 제목보다 안쪽으로 들어가 보여서 그만큼 당긴다.
+                .offset(x: -Self.glyphInset)
         }
     }
 }
