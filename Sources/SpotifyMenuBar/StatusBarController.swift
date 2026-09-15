@@ -4,10 +4,13 @@ import ServiceManagement
 import SwiftUI
 
 /// 메뉴바 아이템을 관리한다. 왼쪽 클릭은 재생 화면, 오른쪽 클릭은 설정 메뉴.
-final class StatusBarController: NSObject, NSPopoverDelegate {
+final class StatusBarController: NSObject, NSWindowDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let model: PlayerModel
-    private let popover = NSPopover()
+    private var panel: PlayerPanel?
+    private var outsideClickMonitor: Any?
+    /// 바깥 클릭으로 막 닫힌 직후의 메뉴바 클릭을 걸러내는 시각.
+    private var closedAt = Date.distantPast
     private let menu = NSMenu()
     private let lengthMenu = NSMenu()
     private let styleMenu = NSMenu()
@@ -33,7 +36,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         self.model = model
         super.init()
 
-        buildPopover()
         buildMenu()
         buildStatusItem()
         render(state: model.state)
@@ -79,6 +81,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             string: text,
             attributes: [.foregroundColor: dimmed ? NSColor.secondaryLabelColor : NSColor.labelColor]
         )
+        // 제목을 바꾸면 눌린 표시가 풀린다. 재생 화면이 떠 있는 동안에는 되살린다.
+        if panel?.isVisible == true { button.highlight(true) }
     }
 
     /// 뒤쪽을 잘라내고 말줄임표를 붙인다. 곡 제목이 앞에 오므로 앞부분을 지킨다.
@@ -87,37 +91,67 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         return text.prefix(max(limit - 1, 1)).trimmingCharacters(in: .whitespaces) + "…"
     }
 
-    // MARK: - 팝오버
+    // MARK: - 재생 화면
 
-    private func buildPopover() {
-        popover.behavior = .transient
-        popover.animates = true
-        popover.delegate = self
-        popover.contentSize = PopoverStyle.current.size
-    }
-
-    private func togglePopover() {
-        if popover.isShown {
-            popover.performClose(nil)
+    private func togglePanel() {
+        if panel?.isVisible == true {
+            closePanel()
             return
         }
+        // 바깥 클릭으로 방금 닫혔는데 그 클릭이 메뉴바 아이템이었다면,
+        // 여기서 다시 열려 깜빡인다.
+        guard Date().timeIntervalSince(closedAt) > 0.2 else { return }
+        openPanel()
+    }
+
+    private func openPanel() {
         guard let button = item.button else { return }
         model.spotify.refresh()
-        // 열 때마다 새로 만든다. 이유는 popoverDidClose에 적어 뒀다.
+
         let style = PopoverStyle.current
-        popover.contentSize = style.size
-        popover.contentViewController = NSHostingController(rootView: NowPlayingView(model: model, style: style))
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        // accessory 앱이라 활성화해 주지 않으면 팝오버 안의 버튼이 첫 클릭을 놓친다.
-        NSApp.activate(ignoringOtherApps: true)
+        let panel = PlayerPanel(size: style.size)
+        panel.delegate = self
+        panel.contentView = NSHostingView(
+            rootView: NowPlayingView(model: model, style: style).cornerClipped()
+        )
+        panel.position(below: button)
+        panel.orderFront(nil)
+        panel.makeKey()
+        self.panel = panel
+
+        // 다른 앱 위를 클릭하면 닫는다. 메뉴바 아이템은 우리 앱이라 여기 걸리지 않는다.
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            self?.closePanel()
+        }
+
+        // 다른 메뉴바 앱처럼 화면이 떠 있는 동안 아이템을 눌린 상태로 둔다.
+        button.highlight(true)
         model.startTicking()
     }
 
-    func popoverDidClose(_ notification: Notification) {
+    private func closePanel() {
+        guard let panel, panel.isVisible else { return }
+        panel.delegate = nil
+        panel.orderOut(nil)
+        // 마키의 repeatForever 애니메이션은 창이 숨어도 계속 돈다. 보이지도 않는
+        // 애니메이션이 CPU를 15%씩 먹어서, 뷰째로 버린다.
+        panel.contentView = NSView()
+        self.panel = nil
+
+        if let monitor = outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            outsideClickMonitor = nil
+        }
+        item.button?.highlight(false)
         model.stopTicking()
-        // 마키와 재생 막대의 repeatForever 애니메이션은 팝오버가 닫혀도 계속 돈다.
-        // 화면에 보이지도 않는 애니메이션이 CPU를 15%씩 먹어서, 뷰째로 버린다.
-        popover.contentViewController = nil
+        closedAt = Date()
+    }
+
+    /// 다른 앱으로 포커스가 넘어가면 닫는다.
+    func windowDidResignKey(_ notification: Notification) {
+        closePanel()
     }
 
     // MARK: - 설정 메뉴
@@ -187,7 +221,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         if isSecondary {
             showMenu()
         } else {
-            togglePopover()
+            togglePanel()
         }
     }
 
