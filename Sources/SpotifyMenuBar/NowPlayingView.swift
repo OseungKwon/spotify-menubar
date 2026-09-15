@@ -1,10 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// 메뉴바 아이콘을 누르면 뜨는 재생 화면. 생김새는 PopoverStyle이 고른다.
+/// 메뉴바 아이콘을 누르면 뜨는 재생 화면.
 struct NowPlayingView: View {
     @ObservedObject var model: PlayerModel
-    let style: PopoverStyle
     /// 창을 띄울 때 정한 크기. 열려 있는 동안 곡이 바뀌어도 폭은 그대로 둔다.
     let size: CGSize
 
@@ -18,11 +17,7 @@ struct NowPlayingView: View {
     private var content: some View {
         switch model.state {
         case .track(let track):
-            switch style {
-            case .coverBleed: CoverBleedView(model: model, track: track)
-            case .poster: PosterView(model: model, track: track)
-            case .strip: StripView(model: model, track: track)
-            }
+            CoverBleedView(model: model, track: track)
 
         case .needsPermission:
             message(

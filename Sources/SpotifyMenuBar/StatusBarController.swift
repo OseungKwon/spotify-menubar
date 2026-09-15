@@ -13,7 +13,6 @@ final class StatusBarController: NSObject, NSWindowDelegate {
     private var closedAt = Date.distantPast
     private let menu = NSMenu()
     private let lengthMenu = NSMenu()
-    private let styleMenu = NSMenu()
     private let launchAtLoginItem = NSMenuItem(
         title: "로그인 시 자동 실행", action: #selector(toggleLaunchAtLogin), keyEquivalent: ""
     )
@@ -108,12 +107,11 @@ final class StatusBarController: NSObject, NSWindowDelegate {
         guard let button = item.button else { return }
         model.spotify.refresh()
 
-        let style = PopoverStyle.current
-        let size = style.size(for: model.state)
+        let size = CoverBleedView.size(for: model.state.track)
         let panel = PlayerPanel(size: size)
         panel.delegate = self
         panel.contentView = NSHostingView(
-            rootView: NowPlayingView(model: model, style: style, size: size).cornerClipped()
+            rootView: NowPlayingView(model: model, size: size).cornerClipped()
         )
         panel.position(below: button)
         panel.orderFront(nil)
@@ -163,26 +161,10 @@ final class StatusBarController: NSObject, NSWindowDelegate {
         permissionItem.target = self
         menu.addItem(permissionItem)
 
-        let openTrackItem = NSMenuItem(
-            title: "이 곡 Spotify에서 열기", action: #selector(openTrack), keyEquivalent: ""
-        )
-        openTrackItem.target = self
-        menu.addItem(openTrackItem)
-
         let openItem = NSMenuItem(title: "Spotify 열기", action: #selector(openSpotify), keyEquivalent: "")
         openItem.target = self
         menu.addItem(openItem)
         menu.addItem(.separator())
-
-        let styleItem = NSMenuItem(title: "재생 화면 디자인", action: nil, keyEquivalent: "")
-        for style in PopoverStyle.allCases {
-            let entry = NSMenuItem(title: style.title, action: #selector(selectStyle(_:)), keyEquivalent: "")
-            entry.target = self
-            entry.representedObject = style.rawValue
-            styleMenu.addItem(entry)
-        }
-        styleItem.submenu = styleMenu
-        menu.addItem(styleItem)
 
         let lengthItem = NSMenuItem(title: "메뉴바 표시 길이", action: nil, keyEquivalent: "")
         for option in Self.lengthOptions {
@@ -207,9 +189,6 @@ final class StatusBarController: NSObject, NSWindowDelegate {
         for entry in lengthMenu.items {
             entry.state = entry.tag == maxTitleLength ? .on : .off
         }
-        for entry in styleMenu.items {
-            entry.state = (entry.representedObject as? String) == PopoverStyle.current.rawValue ? .on : .off
-        }
         launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 5), in: button)
     }
@@ -227,15 +206,6 @@ final class StatusBarController: NSObject, NSWindowDelegate {
     }
 
     @objc private func openSpotify() { model.openSpotify() }
-
-    @objc private func openTrack() { model.openTrackInSpotify() }
-
-    @objc private func selectStyle(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String,
-              let style = PopoverStyle(rawValue: raw) else { return }
-        PopoverStyle.current = style
-        // 팝오버는 열릴 때 새로 만들어지므로 다음에 열면 바뀐 디자인이 나온다.
-    }
 
     @objc private func selectLength(_ sender: NSMenuItem) {
         maxTitleLength = sender.tag
