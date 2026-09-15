@@ -76,22 +76,63 @@ struct TransportControls: View {
     var tint: Color = .primary
     var scale: CGFloat = 1
     var spacing: CGFloat = 20
-    /// 주어진 폭 양끝에 붙이고 가운데 버튼을 한가운데 둔다.
-    var justified: Bool = false
 
     var body: some View {
-        HStack(spacing: justified ? 0 : spacing) {
+        HStack(spacing: spacing) {
             TransportButton(symbol: "backward.fill", size: 15 * scale, tint: tint, action: model.previousTrack)
-            if justified { Spacer(minLength: 8) }
             TransportButton(
                 symbol: isPlaying ? "pause.fill" : "play.fill",
                 size: 21 * scale,
                 tint: tint,
                 action: model.playPause
             )
-            if justified { Spacer(minLength: 8) }
             TransportButton(symbol: "forward.fill", size: 15 * scale, tint: tint, action: model.nextTrack)
         }
+    }
+}
+
+extension TransportControls {
+    /// 첫 버튼의 잉크가 프레임 왼쪽 끝에서 얼마나 들어가 있는지.
+    ///
+    /// 버튼은 누를 자리를 넓히려고 글리프보다 프레임이 크다. 글자와 같은 선에서
+    /// 시작하게 하려면 이만큼 당겨야 한다. 눈대중으로 잡으면 어긋나고, 심볼
+    /// 이미지의 크기로 잡아도 박스 안에 또 여백이 있어서 어긋난다. 실제로
+    /// 칠해진 첫 열을 찾아서 쓴다.
+    static let leadingGlyphInset: CGFloat = {
+        let size: CGFloat = 15
+        guard let image = NSImage(systemSymbolName: "backward.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: size, weight: .medium)),
+            let ink = image.leadingInk()
+        else { return 0 }
+        return (size * 2.1 - image.size.width) / 2 + ink
+    }()
+}
+
+private extension NSImage {
+    /// 이미지 왼쪽 끝에서 처음으로 칠해진 열까지의 거리(pt).
+    func leadingInk() -> CGFloat? {
+        let scale = 2
+        let width = Int(size.width) * scale
+        let height = Int(size.height) * scale
+        guard width > 0, height > 0,
+              let cgImage = cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let context = CGContext(
+                data: nil, width: width, height: height, bitsPerComponent: 8,
+                bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              )
+        else { return nil }
+
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let pixels = context.data?.bindMemory(to: UInt8.self, capacity: width * height * 4) else {
+            return nil
+        }
+        for x in 0..<width {
+            for y in 0..<height where pixels[(y * width + x) * 4 + 3] > 8 {
+                return CGFloat(x) / CGFloat(scale)
+            }
+        }
+        return nil
     }
 }
 

@@ -18,14 +18,12 @@ struct CoverBleedView: View {
     /// 글 묶음과 조작부 사이.
     private static let blockGap: CGFloat = 10
     private static let ring: CGFloat = 104
-    /// 버튼 프레임과 글리프의 좌우 여백 차이.
-    private static let glyphInset: CGFloat = 7
     private static let titleFont = NSFont.systemFont(ofSize: 15, weight: .semibold)
     private static let subtitleFont = NSFont.systemFont(ofSize: 12)
 
     /// 글자 칸의 폭. 아래는 조작부 한 줄이 딱 들어가는 값이고, 위는 더 늘려도
     /// 읽기 좋아지지 않는 선에서 끊는다.
-    private static let infoRange: ClosedRange<CGFloat> = 113...210
+    private static let infoRange: ClosedRange<CGFloat> = 114...210
 
     /// 곡 제목에 맞춰 폭을 정한다. 고정 폭으로 두면 짧은 제목에서 오른쪽이
     /// 휑해져 좌우 여백이 달라 보인다.
@@ -98,10 +96,9 @@ struct CoverBleedView: View {
                 )
             }
 
-            TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, justified: true)
-                // 버튼은 누를 자리를 넓히려고 글리프보다 프레임이 크다. 좌우로
-                // 그만큼 넓혀야 글리프가 글자와 같은 선에서 시작하고 끝난다.
-                .padding(.horizontal, -Self.glyphInset)
+            TransportControls(model: model, isPlaying: track.isPlaying, tint: .white, spacing: 6)
+                // 글리프의 왼쪽 끝을 제목의 왼쪽 끝에 맞춘다.
+                .offset(x: -TransportControls.leadingGlyphInset)
         }
     }
 }
