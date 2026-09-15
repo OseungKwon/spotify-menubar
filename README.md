@@ -11,9 +11,18 @@
 
 ## 설치
 
-macOS 13 이상, Spotify 데스크톱 앱, [Xcode Command Line Tools](https://developer.apple.com/download/all/)가 필요합니다.
+macOS 13 이상과 Spotify 데스크톱 앱이 필요합니다.
 
-터미널에서 아래를 실행해 주세요.
+### 내려받아 설치하기
+
+[릴리스 페이지](https://github.com/OseungKwon/spotify-menubar/releases/latest)에서 `.dmg`를 받아 앱을 `Applications`로 끌어다 놓습니다.
+
+처음 열면 **"확인할 수 없는 개발자"** 경고가 뜹니다. 개발자 인증서 없이 배포해서 생기는 절차입니다.
+**시스템 설정 → 개인정보 보호 및 보안**을 열면 아래쪽에 차단 안내가 있고, 거기서 **확인 없이 열기**를 누르면 됩니다. 한 번만 하면 됩니다.
+
+### 소스에서 빌드하기
+
+[Xcode Command Line Tools](https://developer.apple.com/download/all/)가 필요합니다. 터미널에서 아래를 실행해 주세요.
 
 ```bash
 git clone https://github.com/OseungKwon/spotify-menubar.git
@@ -21,9 +30,11 @@ cd spotify-menubar
 make install
 ```
 
-앱이 만들어져 `응용 프로그램`에 설치되고 바로 실행됩니다.
+앱이 만들어져 `응용 프로그램`에 설치되고 바로 실행됩니다. 이렇게 직접 빌드한 앱에는 위의 경고가 뜨지 않습니다.
 
-첫 실행 때 **"SpotifyMenuBar에서 Spotify을(를) 제어하도록 허용하시겠습니까?"** 창이 뜹니다.
+### 처음 실행할 때
+
+어느 쪽으로 설치하셨든 **"SpotifyMenuBar에서 Spotify을(를) 제어하도록 허용하시겠습니까?"** 창이 뜹니다.
 허용해야 곡 정보를 읽어올 수 있습니다. 실수로 거부하셨다면 메뉴바에 `권한 필요`가 뜨는데, 그 글자를 누르면 시스템 설정으로 갈 수 있습니다.
 
 ## 쓰는 법
@@ -57,5 +68,6 @@ make install
 make build     # 앱만 만들기
 make run       # 만들고 실행
 make install   # 응용 프로그램에 설치하고 실행
+make dmg       # 배포용 dmg 만들기
 make clean
 ```
