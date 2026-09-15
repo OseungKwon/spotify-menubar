@@ -6,7 +6,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="SpotifyMenuBar"
 APP="$ROOT/build/$APP_NAME.app"
 
-"$ROOT/scripts/build.sh" >/dev/null
+# 배포본은 인텔 맥에서도 돌아야 한다.
+UNIVERSAL=1 "$ROOT/scripts/build.sh" >/dev/null
 
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
 DMG="$ROOT/build/$APP_NAME-$VERSION.dmg"
