@@ -51,7 +51,7 @@ struct NowPlayingView: View {
                 .font(.system(size: 24))
                 .foregroundStyle(.secondary)
             Text(text).font(.system(size: 13))
-            Button(button, action: action).buttonStyle(PressableStyle(pressedScale: 0.94))
+            ActionButton(title: button, action: action)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(model.accent.opacity(0.10))
@@ -60,6 +60,30 @@ struct NowPlayingView: View {
     private func openAutomationSettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation")!
         NSWorkspace.shared.open(url)
+    }
+}
+
+/// 곡이 없을 때 뜨는 버튼.
+///
+/// PressableStyle은 기본 버튼 외형을 지운다. 배경을 직접 깔지 않으면 글자만
+/// 남아서 누를 수 있다는 걸 알 수 없다.
+private struct ActionButton: View {
+    let title: String
+    let action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(.primary.opacity(hovering ? 0.16 : 0.09)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(PressableStyle(pressedScale: 0.94))
+        .smoothHover { hovering = $0 }
     }
 }
 
