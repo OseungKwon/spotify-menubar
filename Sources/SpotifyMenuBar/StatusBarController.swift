@@ -109,10 +109,11 @@ final class StatusBarController: NSObject, NSWindowDelegate {
         model.spotify.refresh()
 
         let style = PopoverStyle.current
-        let panel = PlayerPanel(size: style.size)
+        let size = style.size(for: model.state)
+        let panel = PlayerPanel(size: size)
         panel.delegate = self
         panel.contentView = NSHostingView(
-            rootView: NowPlayingView(model: model, style: style).cornerClipped()
+            rootView: NowPlayingView(model: model, style: style, size: size).cornerClipped()
         )
         panel.position(below: button)
         panel.orderFront(nil)

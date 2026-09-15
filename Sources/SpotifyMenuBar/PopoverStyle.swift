@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 /// 재생 화면의 생김새. 오른쪽 클릭 메뉴에서 바꾼다.
 enum PopoverStyle: String, CaseIterable {
@@ -17,9 +17,10 @@ enum PopoverStyle: String, CaseIterable {
         }
     }
 
-    var size: CGSize {
+    /// coverBleed는 곡 제목에 따라 폭이 달라진다.
+    func size(for state: SpotifyState) -> CGSize {
         switch self {
-        case .coverBleed: return CGSize(width: 320, height: 136)
+        case .coverBleed: return CoverBleedView.size(for: state.track)
         case .poster: return CGSize(width: 320, height: 300)
         case .strip: return CGSize(width: 380, height: 86)
         }

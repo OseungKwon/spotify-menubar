@@ -5,10 +5,12 @@ import SwiftUI
 struct NowPlayingView: View {
     @ObservedObject var model: PlayerModel
     let style: PopoverStyle
+    /// 창을 띄울 때 정한 크기. 열려 있는 동안 곡이 바뀌어도 폭은 그대로 둔다.
+    let size: CGSize
 
     var body: some View {
         content
-            .frame(width: style.size.width, height: style.size.height)
+            .frame(width: size.width, height: size.height)
             .clipped()
     }
 
