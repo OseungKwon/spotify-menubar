@@ -25,8 +25,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" build/*.dmg \
-            --title "$GITHUB_REF_NAME" \
-            --notes-file .github/release-notes.md \
-            --generate-notes \
-            --verify-tag
+          # 태그를 다시 밀면 이 워크플로가 또 돈다. 이미 있는 릴리스면 파일만 갈아 끼운다.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" build/*.dmg --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" build/*.dmg \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file .github/release-notes.md \
+              --generate-notes \
+              --verify-tag
+          fi
